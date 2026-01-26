@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Geolocalización de Estadios</title>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        #map {
+            height: 400px;
+            margin-top: 15px;
+        }
+
+        .coords {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Geolocalización de Estadios</h2>
+
+<label for="stadium">Selecciona un estadio:</label><br><br>
+
+<select id="stadium">
+    <option value="">-- Selecciona --</option>
+    <option value="azteca">Estadio Azteca</option>
+    <option value="bbva">Estadio BBVA</option>
+    <option value="akron">Estadio Akron</option>
+    <option value="cu">Estadio Olímpico Universitario</option>
+</select>
+
+<br><br>
+
+<button onclick="buscarEstadio()">Buscar</button>
+
+<div id="map"></div>
+<div class="coords" id="coordenadas"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    // Crear mapa inicial
+    let map = L.map('map').setView([23.6345, -102.5528], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let marcador;
+
+    function buscarEstadio() {
+        const estadio = document.getElementById("stadium").value;
+
+        if (estadio === "") {
+            alert("Selecciona un estadio");
+            return;
+        }
+
+        fetch(`servicio_estadios.php?estadio=${estadio}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                map.setView([data.lat, data.lng], 15);
+
+                if (marcador) {
+                    map.removeLayer(marcador);
+                }
+
+                marcador = L.marker([data.lat, data.lng])
+                    .addTo(map)
+                    .bindPopup(data.nombre)
+                    .openPopup();
+
+                document.getElementById("coordenadas").innerHTML =
+                    `Latitud: ${data.lat} | Longitud: ${data.lng}`;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+    }
+</script>
+    
+</body>
+</html>
