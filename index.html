@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head>                    
     <meta charset="UTF-8">
     <title>Geolocalización de Estadios</title>
 
@@ -66,31 +66,12 @@
             return;
         }
 
-        fetch(`servicio_estadios.php?estadio=${estadio}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
+        const data = obtenerEstadio(estadio);
 
-                map.setView([data.lat, data.lng], 15);
-
-                if (marcador) {
-                    map.removeLayer(marcador);
-                }
-
-                marcador = L.marker([data.lat, data.lng])
-                    .addTo(map)
-                    .bindPopup(data.nombre)
-                    .openPopup();
-
-                document.getElementById("coordenadas").innerHTML =
-                    `Latitud: ${data.lat} | Longitud: ${data.lng}`;
-            })
-            .catch(error => {
-                console.error("Error:", error);
-            });
+if (!data) {
+    alert("Estadio no encontrado");
+    return;
+}               
     }
 </script>
     
