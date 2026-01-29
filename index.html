@@ -1,79 +1,180 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>                    
+<head>
     <meta charset="UTF-8">
-    <title>Geolocalización de Estadios</title>
+    <title>Explorador de Museos del Mundo</title>
 
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet/dist/leaflet.css"
+    />
 
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Georgia', serif;
             padding: 20px;
+            background-color: #fdfaf6;
+            color: #000000;
+        }
+
+        h2 {
+            border-bottom: 2px solid #a38b5d;
+            display: inline-block;
+            padding-bottom: 5px;
         }
 
         #map {
-            height: 400px;
-            margin-top: 15px;
+            height: 500px;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 2px solid #a38b5d;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+        }
+
+        select {
+            padding: 10px;
+            width: 250px;
+            border-radius: 4px;
+            border: 1px solid #a38b5d;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #a38b5d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #8a734b;
         }
 
         .coords {
-            margin-top: 10px;
-            font-weight: bold;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
 
-<h2>Geolocalización de Estadios</h2>
+    <h2>🏛️ Museos Icónicos del Mundo</h2>
 
-<label for="stadium">Selecciona un estadio:</label><br><br>
+    <div class="controls">
+        <label for="museum">Selecciona un destino cultural:</label>
+        <br><br>
 
-<select id="stadium">
-    <option value="">-- Selecciona --</option>
-    <option value="azteca">Estadio Azteca</option>
-    <option value="bbva">Estadio BBVA</option>
-    <option value="akron">Estadio Akron</option>
-    <option value="cu">Estadio Olímpico Universitario</option>
-</select>
+        <select id="museum">
+            <option value="">-- Selecciona un museo --</option>
+            <option value="louvre">Museo del Louvre (París)</option>
+            <option value="met">The MET (Nueva York)</option>
+            <option value="prado">Museo del Prado (Madrid)</option>
+            <option value="british">British Museum (Londres)</option>
+            <option value="soumaya">Museo Soumaya (CDMX)</option>
+            <option value="vaticano">Museos Vaticanos (Vaticano)</option>
+        </select>
 
-<br><br>
+        <button onclick="buscarMuseo()">Explorar</button>
+    </div>
 
-<button onclick="buscarEstadio()">Buscar</button>
+    <div id="map"></div>
 
-<div id="map"></div>
-<div class="coords" id="coordenadas"></div>
+    <div class="coords" id="coordenadas"></div>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script>
-    // Crear mapa inicial
-    let map = L.map('map').setView([23.6345, -102.5528], 5);
+    <script>
+        // Base de datos de museos
+        const museos = {
+            louvre: {
+                nombre: "Museo del Louvre",
+                lat: 48.8606,
+                lng: 2.3376,
+                info: "El museo de arte más visitado del mundo."
+            },
+            met: {
+                nombre: "Metropolitan Museum of Art",
+                lat: 40.7794,
+                lng: -73.9632,
+                info: "El museo más grande de los Estados Unidos."
+            },
+            prado: {
+                nombre: "Museo Nacional del Prado",
+                lat: 40.4138,
+                lng: -3.6921,
+                info: "Una de las pinacotecas más importantes del mundo."
+            },
+            british: {
+                nombre: "British Museum",
+                lat: 51.5194,
+                lng: -0.1270,
+                info: "Dedicado a la historia, el arte y la cultura humana."
+            },
+            soumaya: {
+                nombre: "Museo Soumaya",
+                lat: 19.4407,
+                lng: -99.2047,
+                info: "Institución cultural sin fines de lucro en la CDMX."
+            },
+            vaticano: {
+                nombre: "Museos Vaticanos",
+                lat: 41.9065,
+                lng: 12.4548,
+                info: "Hogar de la Capilla Sixtina."
+            }
+        };
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+        // Inicializar mapa (Vista centrada en el Atlántico)
+        let map = L.map('map').setView([30, -10], 2);
 
-    let marcador;
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-    function buscarEstadio() {
-        const estadio = document.getElementById("stadium").value;
+        let marcador;
 
-        if (estadio === "") {
-            alert("Selecciona un estadio");
-            return;
+        function buscarMuseo() {
+            const seleccion = document.getElementById("museum").value;
+
+            if (seleccion === "") {
+                alert("Por favor, elige un museo para visitar");
+                return;
+            }
+
+            const museo = museos[seleccion];
+
+            // Animación suave hacia el destino
+            map.flyTo([museo.lat, museo.lng], 16, {
+                duration: 2
+            });
+
+            if (marcador) {
+                map.removeLayer(marcador);
+            }
+
+            marcador = L.marker([museo.lat, museo.lng])
+                .addTo(map)
+                .bindPopup(`<b>${museo.nombre}</b><br>${museo.info}`)
+                .openPopup();
+
+            document.getElementById("coordenadas").innerHTML =
+                `📍 Ubicación exacta: ${museo.lat}, ${museo.lng}`;
         }
+    </script>
 
-        const data = obtenerEstadio(estadio);
-
-if (!data) {
-    alert("Estadio no encontrado");
-    return;
-}               
-    }
-</script>
-    
 </body>
 </html>
